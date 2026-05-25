@@ -32,7 +32,7 @@ class TestWebhookValidation:
     def test_accepts_public_url(self, monkeypatch):
         from web import app as app_mod
         monkeypatch.setattr("socket.gethostbyname", lambda h: "93.184.216.34")
-        # Skip HEAD probe by making it raise (silently swallowed in code)
+                                                                         
         monkeypatch.setattr(app_mod._requests, "head", lambda *a, **kw: (_ for _ in ()).throw(Exception("nope")))
         result = app_mod._validate_webhook_url("https://hooks.example.com/prism")
         assert result == "https://hooks.example.com/prism"
@@ -65,5 +65,5 @@ class TestWebhookDelivery:
             raise RuntimeError("network down")
 
         monkeypatch.setattr(app_mod._requests, "post", boom)
-        # Must not raise
+                        
         app_mod._send_webhook("https://hooks.example.com/prism", {"x": 1})

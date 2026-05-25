@@ -254,7 +254,7 @@ class TestHLRLookup:
         result = HLRLookup().validate_phone("+43800901051")
         assert result["error"] is None
         if result["region"]:
-            assert all(ord(c) < 128 or c in ' -()' for c in result["region"]), \
+            assert all(ord(c) < 128 or c in ' -()' for c in result["region"]),\
                 f"Region contains non-ASCII chars (possibly Russian): {result['region']}"
 
     def test_parse_error(self):

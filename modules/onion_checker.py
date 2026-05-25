@@ -1,9 +1,3 @@
-"""Dark web / .onion mirror checker.
-
-Searches public Tor search engines (Ahmia, DarkSearch) for any
-.onion hidden services that mention the given domain or organization.
-This does not connect to Tor directly — only public clearnet APIs.
-"""
 from __future__ import annotations
 
 import re
@@ -16,13 +10,11 @@ _ONION_RE = re.compile(r"https?://[a-z2-7]{16,56}\.onion[/\w\-\.]*", re.IGNORECA
 
 
 class OnionChecker:
-    """Lookup possible .onion mirrors / dark-web mentions of a target."""
 
     def __init__(self, timeout: int = 10):
         self.timeout = timeout
 
     def _search_ahmia(self, query: str) -> List[Dict[str, Any]]:
-        """Ahmia exposes a clearnet search HTML page; parse onion links from it."""
         try:
             r = requests.get(
                 "https://ahmia.fi/search/",
@@ -38,7 +30,6 @@ class OnionChecker:
             return []
 
     def _search_darksearch(self, query: str) -> List[Dict[str, Any]]:
-        """DarkSearch.io public API (free, no key required)."""
         try:
             r = requests.get(
                 "https://darksearch.io/api/search",
@@ -66,10 +57,6 @@ class OnionChecker:
             return []
 
     def check(self, target: str) -> Dict[str, Any]:
-        """Aggregate results for a domain / organization.
-
-        Returns dict with onion mirrors found and counts per source.
-        """
         target = (target or "").strip()
         if not target:
             return {"target": target, "error": "empty target"}

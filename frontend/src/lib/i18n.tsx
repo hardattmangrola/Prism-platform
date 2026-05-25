@@ -42,16 +42,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         setLocaleState(stored);
         return;
       }
-      // Fallback: detect from browser
       const lang = (typeof navigator !== 'undefined' ? navigator.language?.toLowerCase() : '') || '';
       if (lang.startsWith('ru')) setLocaleState('ru');
       else if (lang.startsWith('de')) setLocaleState('de');
-    } catch { /* ignore */ }
+    } catch {}
   }, []);
 
   const setLocale = useCallback((l: Locale) => {
     setLocaleState(l);
-    try { localStorage.setItem(STORAGE_KEY, l); } catch { /* ignore */ }
+    try { localStorage.setItem(STORAGE_KEY, l); } catch {}
   }, []);
 
   const t = useCallback((key: string) => lookup(MESSAGES[locale], key), [locale]);
@@ -66,7 +65,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 export function useTranslations() {
   const ctx = useContext(I18nContext);
   if (!ctx) {
-    // Fallback: return key as-is when used outside provider
     return { locale: 'en' as Locale, setLocale: () => {}, t: (key: string) => key };
   }
   return ctx;

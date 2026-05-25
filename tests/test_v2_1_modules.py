@@ -44,7 +44,7 @@ class TestOnionChecker:
 
         monkeypatch.setattr(requests, "get", raise_network)
         result = OnionChecker(timeout=1).check("example.com")
-        # Should still succeed with empty results
+                                                 
         assert result["error"] is None
         assert result["total_found"] == 0
 
@@ -133,11 +133,11 @@ class TestCensysLookup:
 
 class TestPdfReport:
     def test_pdf_generation_requires_weasyprint(self, monkeypatch):
-        # If weasyprint is installed in the dev env this passes the import,
-        # otherwise it raises ImportError with a helpful message.
+                                                                           
+                                                                 
         from modules.report_generator import generate_pdf_report
         try:
-            import weasyprint  # noqa: F401
+            import weasyprint              
             installed = True
         except ImportError:
             installed = False

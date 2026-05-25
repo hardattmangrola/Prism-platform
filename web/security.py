@@ -1,7 +1,8 @@
+import hashlib
 import hmac
 import os
 import re
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -11,22 +12,61 @@ from slowapi.util import get_remote_address
 MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_MB", "20")) * 1024 * 1024
 MAX_TARGET_LEN   = 512
 
-API_KEY: Optional[str] = os.getenv("API_KEY", "").strip() or None
+def _parse_keys() -> List[str]:
+    raw_multi = os.getenv("API_KEYS", "").strip()
+    raw_single = os.getenv("API_KEY", "").strip()
+    keys = []
+    if raw_multi:
+        keys.extend(k.strip() for k in raw_multi.split(",") if k.strip())
+    if raw_single and raw_single not in keys:
+        keys.append(raw_single)
+    return keys
+
+_API_KEYS: List[str] = _parse_keys()
+API_KEY: Optional[str] = _API_KEYS[0] if _API_KEYS else None                               
+
+ANONYMOUS_PRINCIPAL = "anonymous"
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/day", "60/hour"])
 
+def _principal_from_key(key: str) -> str:
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
+
+def _match_key(presented: str) -> Optional[str]:
+    if not presented:
+        return None
+    for k in _API_KEYS:
+        if hmac.compare_digest(presented, k):
+            return k
+    return None
+
+def extract_api_key(request: Request) -> Optional[str]:
+    return request.headers.get("X-API-Key") or request.query_params.get("api_key") or None
+
 async def require_api_key(request: Request) -> None:
-    if not API_KEY:
+    if not _API_KEYS:
+                                                                  
+        request.state.principal = ANONYMOUS_PRINCIPAL
         return
-    key = (
-        request.headers.get("X-API-Key")
-        or request.query_params.get("api_key")
-    )
-    if not key or not hmac.compare_digest(key, API_KEY):
+    key = extract_api_key(request)
+    matched = _match_key(key or "")
+    if not matched:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API key. Pass X-API-Key header.",
         )
+    request.state.principal = _principal_from_key(matched)
+
+def get_principal(request: Request) -> str:
+    return getattr(request.state, "principal", ANONYMOUS_PRINCIPAL)
+
+def principal_for_key(key: Optional[str]) -> Optional[str]:
+    if not _API_KEYS:
+        return ANONYMOUS_PRINCIPAL
+    matched = _match_key(key or "")
+    if not matched:
+        return None
+    return _principal_from_key(matched)
 
 def validate_target(target: str) -> str:
     target = target.strip()
@@ -56,6 +96,7 @@ def validate_scan_id(scan_id: str) -> str:
     return scan_id
 
 def validate_url_not_private(url: str) -> str:
+    import ipaddress
     import socket
     from urllib.parse import urlparse
     parsed = urlparse(url)
@@ -63,13 +104,24 @@ def validate_url_not_private(url: str) -> str:
     if not hostname:
         raise HTTPException(status_code=400, detail="Invalid URL.")
     try:
-        ip = socket.gethostbyname(hostname)
+        infos = socket.getaddrinfo(hostname, None)
     except socket.gaierror:
         raise HTTPException(status_code=400, detail="Cannot resolve hostname.")
-    import ipaddress
-    addr = ipaddress.ip_address(ip)
-    if addr.is_private or addr.is_loopback or addr.is_reserved or addr.is_link_local:
-        raise HTTPException(status_code=400, detail="Requests to private/internal addresses are blocked.")
+    seen = set()
+    for _f, _t, _p, _c, sa in infos:
+        ip_str = sa[0]
+        if ip_str in seen:
+            continue
+        seen.add(ip_str)
+        try:
+            addr = ipaddress.ip_address(ip_str)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid resolved address.")
+        if (addr.is_private or addr.is_loopback or addr.is_reserved
+                or addr.is_link_local or addr.is_multicast or addr.is_unspecified):
+            raise HTTPException(status_code=400, detail="Requests to private/internal addresses are blocked.")
+    if not seen:
+        raise HTTPException(status_code=400, detail="Cannot resolve hostname.")
     return url
 
 def get_allowed_origins() -> list:

@@ -1,12 +1,3 @@
-"""Censys.io integration.
-
-Uses Censys Search API v2 (https://search.censys.io/api) for:
-  - Host info & open ports/services for IPs
-  - Certificate / subdomain discovery for domains
-
-Requires CENSYS_API_ID and CENSYS_API_SECRET environment variables.
-Free tier: 250 queries/month.
-"""
 from __future__ import annotations
 
 import os
@@ -20,7 +11,6 @@ CENSYS_BASE = "https://search.censys.io/api"
 
 
 class CensysLookup:
-    """Thin wrapper over the public Censys Search API v2."""
 
     def __init__(self, timeout: int = 15):
         self.timeout = timeout
@@ -40,7 +30,6 @@ class CensysLookup:
         }
 
     def search_ip(self, ip: str) -> Dict[str, Any]:
-        """Fetch host details (services, ports, software, ASN) for an IP."""
         auth = self._auth()
         if auth is None:
             return self._err_no_key()
@@ -83,7 +72,6 @@ class CensysLookup:
             return {"error": str(e)[:200], "results": [], "total": 0}
 
     def search_domain(self, domain: str) -> Dict[str, Any]:
-        """Find certificates issued for a domain and extract subdomains."""
         auth = self._auth()
         if auth is None:
             return self._err_no_key()
@@ -101,7 +89,7 @@ class CensysLookup:
             if r.status_code == 401:
                 return {"error": "Invalid Censys credentials", "results": [], "total": 0}
             if r.status_code == 404:
-                # Falls back gracefully if cert API tier disabled
+                                                                 
                 return {"error": None, "results": [], "total": 0, "domain": domain}
             if r.status_code != 200:
                 return {"error": f"Censys HTTP {r.status_code}", "results": [], "total": 0}

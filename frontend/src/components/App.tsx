@@ -111,7 +111,7 @@ export function App() {
           setProgressLog(prev => [...prev, `Error: ${data.error || 'unknown'}`]);
           return;
         }
-      } catch { /* keep polling */ }
+      } catch {}
     }
     setScanStatus('failed');
   }, []);

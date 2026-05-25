@@ -5,7 +5,6 @@ export function useTheme() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Get saved theme from localStorage or system preference
     const saved = localStorage.getItem('theme') as 'light' | 'dark' | null;
     const initial = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     
@@ -32,7 +31,6 @@ export function useTheme() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme]);
 
   return { theme, toggleTheme, mounted };

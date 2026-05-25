@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 from jinja2 import Environment, BaseLoader
 
+from modules.report_i18n import make_translator
+
 REPORT_TEMPLATE = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -169,15 +171,15 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
 <!-- Scan info banner -->
 <div style="margin-bottom:20px;padding:12px 16px;background:var(--surf-1);border:1px solid var(--bdr-1);border-radius:8px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
   <div>
-    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Target</div>
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">{{ t('report.target') }}</div>
     <div style="font-family:ui-monospace,monospace;font-size:13px;font-weight:600;color:var(--t1);">{{ target }}</div>
   </div>
   <div>
-    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Type</div>
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">{{ t('report.scanType') }}</div>
     <div style="font-size:12px;color:var(--t2);">{{ scan_type }}</div>
   </div>
   <div>
-    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Generated</div>
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">{{ t('report.generated') }}</div>
     <div style="font-size:12px;color:var(--t2);">{{ generated_at }}</div>
   </div>
 </div>
@@ -189,13 +191,13 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
     <div>
       <div class="score-num" style="color:{{ opsec_circle_color }}">{{ opsec.score }}</div>
       <div class="score-sub">/ 100 OPSEC</div>
-      <div class="score-risk" style="color:{{ opsec_circle_color }}">{{ opsec.risk_level }} RISK</div>
+      <div class="score-risk" style="color:{{ opsec_circle_color }}">{{ t('opsec.risk', level=opsec.risk_level) }}</div>
     </div>
   </div>
   <div class="score-bars">
     {% for key, cat in opsec.categories.items() %}
     <div class="cat-row">
-      <div class="cat-name">{{ cat_labels[key] }}</div>
+      <div class="cat-name">{{ t('opsec.cat.' + key) }}</div>
       <div class="bar-track">
         <div class="bar-fill" style="width:{{ cat.percent }}%;background:{{ bar_color(cat.percent) }};"></div>
       </div>
@@ -209,7 +211,7 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
 <div class="section">
   <div class="section-title">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    Security Findings
+    {{ t('opsec.findings', n=opsec.all_findings|length) }}
   </div>
   <div class="card"><div class="card-body">
     {% for f in opsec.all_findings %}
@@ -217,7 +219,7 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
       <span class="badge {% if f.severity in ('CRITICAL','HIGH') %}badge-high{% elif f.severity == 'MEDIUM' %}badge-med{% elif f.severity == 'LOW' %}badge-low{% else %}badge-info{% endif %}">{{ f.severity }}</span>
       <div>
         <div class="finding-msg">{{ f.message }}</div>
-        <div class="finding-meta">−{{ f.deduction }} pts</div>
+        <div class="finding-meta">−{{ f.deduction }} {{ t('opsec.points') }}</div>
       </div>
     </div>
     {% endfor %}
@@ -231,19 +233,19 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
 <div class="section">
   <div class="section-title">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-    WHOIS Registration
+    {{ t('whois.title') }}
   </div>
   <div class="card"><div class="card-body">
-    <div class="kv"><span class="kv-k">Registrar</span><span class="kv-v">{{ results.whois.registrar or 'N/A' }}</span></div>
-    <div class="kv"><span class="kv-k">Organization</span><span class="kv-v">{{ results.whois.org or 'N/A' }}</span></div>
-    <div class="kv"><span class="kv-k">Country</span><span class="kv-v">{{ results.whois.country or 'N/A' }}</span></div>
-    <div class="kv"><span class="kv-k">Created</span><span class="kv-v">{{ (results.whois.creation_date or 'N/A')[:10] }}</span></div>
-    <div class="kv"><span class="kv-k">Expires</span><span class="kv-v">{{ (results.whois.expiration_date or 'N/A')[:10] }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('whois.registrar') }}</span><span class="kv-v">{{ results.whois.registrar or 'N/A' }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('whois.organization') }}</span><span class="kv-v">{{ results.whois.org or 'N/A' }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('whois.country') }}</span><span class="kv-v">{{ results.whois.country or 'N/A' }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('whois.created') }}</span><span class="kv-v">{{ (results.whois.creation_date or 'N/A')[:10] }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('whois.expires') }}</span><span class="kv-v">{{ (results.whois.expiration_date or 'N/A')[:10] }}</span></div>
     {% if results.whois.emails %}
-    <div class="kv"><span class="kv-k">Contact Emails</span><span class="kv-v">{% for e in results.whois.emails %}<span class="tag tag-red">{{ e }}</span>{% endfor %}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('whois.emails') if t('whois.emails') != 'whois.emails' else 'Contact Emails' }}</span><span class="kv-v">{% for e in results.whois.emails %}<span class="tag tag-red">{{ e }}</span>{% endfor %}</span></div>
     {% endif %}
     {% if results.whois.name_servers %}
-    <div class="kv"><span class="kv-k">Name Servers</span><span class="kv-v">{% for ns in results.whois.name_servers[:4] %}<span class="tag">{{ ns }}</span>{% endfor %}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('whois.nameServers') }}</span><span class="kv-v">{% for ns in results.whois.name_servers[:4] %}<span class="tag">{{ ns }}</span>{% endfor %}</span></div>
     {% endif %}
   </div></div>
 </div>
@@ -254,7 +256,7 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
 <div class="section">
   <div class="section-title">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-    DNS Records
+    {{ t('dns.title') }}
   </div>
   <div class="card">
     <div class="card-head">Record types</div>
@@ -277,13 +279,13 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
 <div class="section">
   <div class="section-title">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    Geolocation
+    {{ t('geoip.title') }}
   </div>
   <div class="card"><div class="card-body">
-    <div class="kv"><span class="kv-k">IP Address</span><span class="kv-v">{{ results.geoip.ip }}</span></div>
-    <div class="kv"><span class="kv-k">Location</span><span class="kv-v">{{ results.geoip.city }}, {{ results.geoip.region }}, {{ results.geoip.country_name or results.geoip.country }}</span></div>
-    <div class="kv"><span class="kv-k">Coordinates</span><span class="kv-v">{{ results.geoip.loc or 'N/A' }}</span></div>
-    <div class="kv"><span class="kv-k">Organization</span><span class="kv-v">{{ results.geoip.org or 'N/A' }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('geoip.ip') }}</span><span class="kv-v">{{ results.geoip.ip }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('geoip.city') }}</span><span class="kv-v">{{ results.geoip.city }}, {{ results.geoip.region }}, {{ results.geoip.country_name or results.geoip.country }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('geoip.coordinates') }}</span><span class="kv-v">{{ results.geoip.loc or 'N/A' }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('geoip.organization') }}</span><span class="kv-v">{{ results.geoip.org or 'N/A' }}</span></div>
     <div class="kv"><span class="kv-k">Timezone</span><span class="kv-v">{{ results.geoip.timezone or 'N/A' }}</span></div>
   </div>
   {% if results.geoip.loc %}
@@ -317,10 +319,10 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
 <div class="section">
   <div class="section-title">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-    Certificate Transparency &mdash; Subdomains
+    {{ t('subdomains.title', n=results.cert_transparency.subdomains|length) }}
   </div>
   <div class="card">
-    <div class="card-head">{{ results.cert_transparency.subdomains|length }} subdomains &nbsp;·&nbsp; {{ results.cert_transparency.total_certs }} certificates</div>
+    <div class="card-head">{{ results.cert_transparency.subdomains|length }} &nbsp;·&nbsp; {{ results.cert_transparency.total_certs }}</div>
     <div class="card-body">
       {% for sub in results.cert_transparency.subdomains %}<span class="tag tag-blue">{{ sub }}</span>{% endfor %}
     </div>
@@ -335,11 +337,11 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
 <div class="section">
   <div class="section-title">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    Username Search &mdash; {{ found_accounts|length }} Account(s) Found
+    {{ t('accounts.title', n=found_accounts|length) }}
   </div>
   <div class="card">
     <table>
-      <thead><tr><th>Platform</th><th>Profile URL</th><th>Response</th></tr></thead>
+      <thead><tr><th>{{ t('accounts.site') }}</th><th>{{ t('accounts.url') }}</th><th>Time</th></tr></thead>
       <tbody>
       {% for r in found_accounts %}
       <tr>
@@ -360,14 +362,14 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
 <div class="section">
   <div class="section-title">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    VirusTotal Reputation
+    {{ t('virustotal.title') }}
   </div>
   <div class="card"><div class="card-body">
-    <div class="kv"><span class="kv-k">Malicious</span><span class="kv-v" style="color:var(--red);font-weight:700">{{ results.virustotal.malicious }}</span></div>
-    <div class="kv"><span class="kv-k">Suspicious</span><span class="kv-v" style="color:var(--yellow)">{{ results.virustotal.suspicious }}</span></div>
-    <div class="kv"><span class="kv-k">Harmless</span><span class="kv-v" style="color:var(--green)">{{ results.virustotal.harmless }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('virustotal.malicious') }}</span><span class="kv-v" style="color:var(--red);font-weight:700">{{ results.virustotal.malicious }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('virustotal.suspicious') }}</span><span class="kv-v" style="color:var(--yellow)">{{ results.virustotal.suspicious }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('virustotal.harmless') }}</span><span class="kv-v" style="color:var(--green)">{{ results.virustotal.harmless }}</span></div>
     <div class="kv"><span class="kv-k">Undetected</span><span class="kv-v">{{ results.virustotal.undetected }}</span></div>
-    {% if results.virustotal.country %}<div class="kv"><span class="kv-k">Country</span><span class="kv-v">{{ results.virustotal.country }}</span></div>{% endif %}
+    {% if results.virustotal.country %}<div class="kv"><span class="kv-k">{{ t('geoip.country') }}</span><span class="kv-v">{{ results.virustotal.country }}</span></div>{% endif %}
     {% if results.virustotal.as_owner %}<div class="kv"><span class="kv-k">ASN</span><span class="kv-v">{{ results.virustotal.as_owner }}</span></div>{% endif %}
   </div></div>
 </div>
@@ -378,14 +380,14 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
 <div class="section">
   <div class="section-title">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    AbuseIPDB
+    {{ t('abuseipdb.title') }}
   </div>
   <div class="card"><div class="card-body">
-    <div class="kv"><span class="kv-k">Abuse Score</span>
+    <div class="kv"><span class="kv-k">{{ t('abuseipdb.confidence') }}</span>
       <span class="kv-v" style="color:{% if results.abuseipdb.abuse_score>=50 %}var(--red){% elif results.abuseipdb.abuse_score>=10 %}var(--yellow){% else %}var(--green){% endif %};font-weight:700">{{ results.abuseipdb.abuse_score }}/100</span>
     </div>
-    <div class="kv"><span class="kv-k">Total Reports</span><span class="kv-v">{{ results.abuseipdb.total_reports }}</span></div>
-    <div class="kv"><span class="kv-k">ISP</span><span class="kv-v">{{ results.abuseipdb.isp or 'N/A' }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('abuseipdb.totalReports') }}</span><span class="kv-v">{{ results.abuseipdb.total_reports }}</span></div>
+    <div class="kv"><span class="kv-k">{{ t('abuseipdb.isp') }}</span><span class="kv-v">{{ results.abuseipdb.isp or 'N/A' }}</span></div>
     <div class="kv"><span class="kv-k">Usage Type</span><span class="kv-v">{{ results.abuseipdb.usage_type or 'N/A' }}</span></div>
     {% if results.abuseipdb.is_tor %}<div class="kv"><span class="kv-k">TOR Node</span><span class="kv-v" style="color:var(--red);font-weight:600">YES</span></div>{% endif %}
   </div></div>
@@ -397,7 +399,7 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
 <div class="section">
   <div class="section-title">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    Shodan &mdash; Open Ports &amp; Services
+    {{ t('shodan.title') }}
   </div>
   <div class="card">
     {% if results.shodan.open_ports or results.shodan.vulns %}
@@ -482,7 +484,7 @@ REPORT_TEMPLATE = r"""<!DOCTYPE html>
 {% endif %}
 
 <div class="footer">
-  PRISM v2.0 &nbsp;&middot;&nbsp; {{ generated_at }} &nbsp;&middot;&nbsp; For authorized security research only.
+  {{ t('report.footer') }} &nbsp;&middot;&nbsp; {{ generated_at }} &nbsp;&middot;&nbsp; PRISM v2.1.1
 </div>
 
 </div>
@@ -519,6 +521,7 @@ def generate_html_report(
     results: Dict[str, Any],
     opsec: Optional[Dict[str, Any]] = None,
     output_path: Optional[str] = None,
+    lang: str = "en",
 ) -> str:
     env = Environment(loader=BaseLoader(), autoescape=True)
     env.filters["tojson"] = lambda v: json.dumps(v)
@@ -533,6 +536,8 @@ def generate_html_report(
         "opsec_circle_color": _opsec_circle_color(opsec["score"]) if opsec else "#636e72",
         "cat_labels": CAT_LABELS,
         "bar_color": _bar_color,
+        "t": make_translator(lang),
+        "lang": lang,
     }
 
     html = template.render(**context)
@@ -594,24 +599,24 @@ PDF_REPORT_TEMPLATE = r"""<!DOCTYPE html>
 </head>
 <body>
 
-<h1>PRISM OSINT Report</h1>
-<div class="muted">Target: <span class="target">{{ target }}</span>
-  &nbsp;·&nbsp; Type: {{ scan_type }}
-  &nbsp;·&nbsp; Generated: {{ generated_at }}</div>
+<h1>{{ t('report.title') }}</h1>
+<div class="muted">{{ t('report.target') }}: <span class="target">{{ target }}</span>
+  &nbsp;·&nbsp; {{ t('report.scanType') }}: {{ scan_type }}
+  &nbsp;·&nbsp; {{ t('report.generated') }}: {{ generated_at }}</div>
 
 {% if opsec %}
 <div class="score-box">
   <table><tr>
     <td style="width: 90pt; vertical-align: middle;">
       <div class="score-num">{{ opsec.score }}</div>
-      <div class="score-risk">{{ opsec.risk_level }} RISK</div>
-      <div class="muted">OPSEC Score</div>
+      <div class="score-risk">{{ t('opsec.risk', level=opsec.risk_level) }}</div>
+      <div class="muted">{{ t('opsec.score') }}</div>
     </td>
     <td style="vertical-align: middle;">
       <table>
         {% for key, cat in opsec.categories.items() %}
         <tr>
-          <td class="label" style="width: 35%;">{{ cat_labels.get(key, key) }}</td>
+          <td class="label" style="width: 35%;">{{ t('opsec.cat.' + key) }}</td>
           <td style="width: 50%;">
             <div style="background: #d0d7de; height: 5pt; border-radius: 2pt;">
               <div style="background: {{ bar_color(cat.percent) }}; height: 5pt; width: {{ cat.percent }}%; border-radius: 2pt;"></div>
@@ -626,12 +631,12 @@ PDF_REPORT_TEMPLATE = r"""<!DOCTYPE html>
 </div>
 
 {% if opsec.all_findings %}
-<h2>Security Findings ({{ opsec.all_findings|length }})</h2>
+<h2>{{ t('opsec.findings', n=opsec.all_findings|length) }}</h2>
 {% for f in opsec.all_findings %}
 <div class="finding">
   <span class="badge {% if f.severity == 'HIGH' %}badge-high{% elif f.severity == 'MEDIUM' %}badge-med{% else %}badge-low{% endif %}">{{ f.severity }}</span>
   <span class="finding-msg">{{ f.message }}</span>
-  <div class="finding-meta">−{{ f.deduction }} pts · {{ f.category }}</div>
+  <div class="finding-meta">−{{ f.deduction }} {{ t('opsec.points') }} · {{ t('opsec.cat.' + f.category) }}</div>
 </div>
 {% endfor %}
 {% endif %}
@@ -639,20 +644,20 @@ PDF_REPORT_TEMPLATE = r"""<!DOCTYPE html>
 
 {% set whois = results.get('whois') %}
 {% if whois and not whois.get('error') %}
-<h2>WHOIS</h2>
+<h2>{{ t('whois.title') }}</h2>
 <table>
-  {% if whois.registrar %}<tr><td class="label">Registrar</td><td class="value">{{ whois.registrar }}</td></tr>{% endif %}
-  {% if whois.org %}<tr><td class="label">Organization</td><td class="value">{{ whois.org }}</td></tr>{% endif %}
-  {% if whois.creation_date %}<tr><td class="label">Created</td><td class="value">{{ whois.creation_date }}</td></tr>{% endif %}
-  {% if whois.expiration_date %}<tr><td class="label">Expires</td><td class="value">{{ whois.expiration_date }}</td></tr>{% endif %}
-  {% if whois.country %}<tr><td class="label">Country</td><td class="value">{{ whois.country }}</td></tr>{% endif %}
-  {% if whois.name_servers %}<tr><td class="label">Name servers</td><td class="value">{{ whois.name_servers|join(', ') }}</td></tr>{% endif %}
+  {% if whois.registrar %}<tr><td class="label">{{ t('whois.registrar') }}</td><td class="value">{{ whois.registrar }}</td></tr>{% endif %}
+  {% if whois.org %}<tr><td class="label">{{ t('whois.organization') }}</td><td class="value">{{ whois.org }}</td></tr>{% endif %}
+  {% if whois.creation_date %}<tr><td class="label">{{ t('whois.created') }}</td><td class="value">{{ whois.creation_date }}</td></tr>{% endif %}
+  {% if whois.expiration_date %}<tr><td class="label">{{ t('whois.expires') }}</td><td class="value">{{ whois.expiration_date }}</td></tr>{% endif %}
+  {% if whois.country %}<tr><td class="label">{{ t('whois.country') }}</td><td class="value">{{ whois.country }}</td></tr>{% endif %}
+  {% if whois.name_servers %}<tr><td class="label">{{ t('whois.nameServers') }}</td><td class="value">{{ whois.name_servers|join(', ') }}</td></tr>{% endif %}
 </table>
 {% endif %}
 
 {% set dns = results.get('dns') %}
 {% if dns and dns.get('records') %}
-<h2>DNS</h2>
+<h2>{{ t('dns.title') }}</h2>
 <table>
   {% for rtype, vals in dns.records.items() %}
   <tr><td class="label">{{ rtype }}</td><td class="value">{{ vals|join(', ') if vals is iterable and vals is not string else vals }}</td></tr>
@@ -662,33 +667,33 @@ PDF_REPORT_TEMPLATE = r"""<!DOCTYPE html>
 
 {% set geoip = results.get('geoip') %}
 {% if geoip and not geoip.get('error') %}
-<h2>GeoIP</h2>
+<h2>{{ t('geoip.title') }}</h2>
 <table>
-  {% if geoip.ip %}<tr><td class="label">IP</td><td class="value">{{ geoip.ip }}</td></tr>{% endif %}
-  {% if geoip.city %}<tr><td class="label">City</td><td class="value">{{ geoip.city }}</td></tr>{% endif %}
-  {% if geoip.country_name or geoip.country %}<tr><td class="label">Country</td><td class="value">{{ geoip.country_name or geoip.country }}</td></tr>{% endif %}
-  {% if geoip.org %}<tr><td class="label">Organization</td><td class="value">{{ geoip.org }}</td></tr>{% endif %}
-  {% if geoip.loc %}<tr><td class="label">Coordinates</td><td class="value">{{ geoip.loc }}</td></tr>{% endif %}
+  {% if geoip.ip %}<tr><td class="label">{{ t('geoip.ip') }}</td><td class="value">{{ geoip.ip }}</td></tr>{% endif %}
+  {% if geoip.city %}<tr><td class="label">{{ t('geoip.city') }}</td><td class="value">{{ geoip.city }}</td></tr>{% endif %}
+  {% if geoip.country_name or geoip.country %}<tr><td class="label">{{ t('geoip.country') }}</td><td class="value">{{ geoip.country_name or geoip.country }}</td></tr>{% endif %}
+  {% if geoip.org %}<tr><td class="label">{{ t('geoip.organization') }}</td><td class="value">{{ geoip.org }}</td></tr>{% endif %}
+  {% if geoip.loc %}<tr><td class="label">{{ t('geoip.coordinates') }}</td><td class="value">{{ geoip.loc }}</td></tr>{% endif %}
 </table>
 {% endif %}
 
 {% set ct = results.get('cert_transparency') %}
 {% if ct and ct.subdomains %}
-<h2>Subdomains ({{ ct.subdomains|length }})</h2>
+<h2>{{ t('subdomains.title', n=ct.subdomains|length) }}</h2>
 <table>
   {% for sub in ct.subdomains[:80] %}
   <tr><td class="value">{{ sub }}</td></tr>
   {% endfor %}
 </table>
-{% if ct.subdomains|length > 80 %}<div class="muted">… and {{ ct.subdomains|length - 80 }} more</div>{% endif %}
+{% if ct.subdomains|length > 80 %}<div class="muted">{{ t('subdomains.more', n=ct.subdomains|length - 80) }}</div>{% endif %}
 {% endif %}
 
 {% set bb = results.get('blackbird') %}
 {% if bb %}
 {% set found = bb|selectattr('status', 'equalto', 'found')|list %}
 {% if found %}
-<h2>Accounts found ({{ found|length }})</h2>
-<table><tr><th>Site</th><th>URL</th></tr>
+<h2>{{ t('accounts.title', n=found|length) }}</h2>
+<table><tr><th>{{ t('accounts.site') }}</th><th>{{ t('accounts.url') }}</th></tr>
 {% for r in found %}<tr><td>{{ r.site }}</td><td class="value">{{ r.url }}</td></tr>{% endfor %}
 </table>
 {% endif %}
@@ -696,59 +701,59 @@ PDF_REPORT_TEMPLATE = r"""<!DOCTYPE html>
 
 {% set vt = results.get('virustotal') %}
 {% if vt and not vt.get('error') %}
-<h2>VirusTotal</h2>
+<h2>{{ t('virustotal.title') }}</h2>
 <table>
-  {% if vt.malicious is defined %}<tr><td class="label">Malicious</td><td class="value">{{ vt.malicious }}</td></tr>{% endif %}
-  {% if vt.suspicious is defined %}<tr><td class="label">Suspicious</td><td class="value">{{ vt.suspicious }}</td></tr>{% endif %}
-  {% if vt.harmless is defined %}<tr><td class="label">Harmless</td><td class="value">{{ vt.harmless }}</td></tr>{% endif %}
-  {% if vt.reputation is defined %}<tr><td class="label">Reputation</td><td class="value">{{ vt.reputation }}</td></tr>{% endif %}
+  {% if vt.malicious is defined %}<tr><td class="label">{{ t('virustotal.malicious') }}</td><td class="value">{{ vt.malicious }}</td></tr>{% endif %}
+  {% if vt.suspicious is defined %}<tr><td class="label">{{ t('virustotal.suspicious') }}</td><td class="value">{{ vt.suspicious }}</td></tr>{% endif %}
+  {% if vt.harmless is defined %}<tr><td class="label">{{ t('virustotal.harmless') }}</td><td class="value">{{ vt.harmless }}</td></tr>{% endif %}
+  {% if vt.reputation is defined %}<tr><td class="label">{{ t('virustotal.reputation') }}</td><td class="value">{{ vt.reputation }}</td></tr>{% endif %}
 </table>
 {% endif %}
 
 {% set abuse = results.get('abuseipdb') %}
 {% if abuse and not abuse.get('error') %}
-<h2>AbuseIPDB</h2>
+<h2>{{ t('abuseipdb.title') }}</h2>
 <table>
-  {% if abuse.abuseConfidenceScore is defined %}<tr><td class="label">Confidence score</td><td class="value">{{ abuse.abuseConfidenceScore }}</td></tr>{% endif %}
-  {% if abuse.totalReports is defined %}<tr><td class="label">Total reports</td><td class="value">{{ abuse.totalReports }}</td></tr>{% endif %}
-  {% if abuse.countryCode %}<tr><td class="label">Country</td><td class="value">{{ abuse.countryCode }}</td></tr>{% endif %}
-  {% if abuse.isp %}<tr><td class="label">ISP</td><td class="value">{{ abuse.isp }}</td></tr>{% endif %}
+  {% if abuse.abuseConfidenceScore is defined %}<tr><td class="label">{{ t('abuseipdb.confidence') }}</td><td class="value">{{ abuse.abuseConfidenceScore }}</td></tr>{% endif %}
+  {% if abuse.totalReports is defined %}<tr><td class="label">{{ t('abuseipdb.totalReports') }}</td><td class="value">{{ abuse.totalReports }}</td></tr>{% endif %}
+  {% if abuse.countryCode %}<tr><td class="label">{{ t('abuseipdb.country') }}</td><td class="value">{{ abuse.countryCode }}</td></tr>{% endif %}
+  {% if abuse.isp %}<tr><td class="label">{{ t('abuseipdb.isp') }}</td><td class="value">{{ abuse.isp }}</td></tr>{% endif %}
 </table>
 {% endif %}
 
 {% set shodan = results.get('shodan') %}
 {% if shodan and not shodan.get('error') %}
-<h2>Shodan</h2>
+<h2>{{ t('shodan.title') }}</h2>
 <table>
-  {% if shodan.ip_str %}<tr><td class="label">IP</td><td class="value">{{ shodan.ip_str }}</td></tr>{% endif %}
-  {% if shodan.org %}<tr><td class="label">Organization</td><td class="value">{{ shodan.org }}</td></tr>{% endif %}
-  {% if shodan.os %}<tr><td class="label">OS</td><td class="value">{{ shodan.os }}</td></tr>{% endif %}
-  {% if shodan.ports %}<tr><td class="label">Open ports</td><td class="value">{{ shodan.ports|join(', ') }}</td></tr>{% endif %}
+  {% if shodan.ip_str %}<tr><td class="label">{{ t('shodan.ip') }}</td><td class="value">{{ shodan.ip_str }}</td></tr>{% endif %}
+  {% if shodan.org %}<tr><td class="label">{{ t('shodan.organization') }}</td><td class="value">{{ shodan.org }}</td></tr>{% endif %}
+  {% if shodan.os %}<tr><td class="label">{{ t('shodan.os') }}</td><td class="value">{{ shodan.os }}</td></tr>{% endif %}
+  {% if shodan.ports %}<tr><td class="label">{{ t('shodan.openPorts') }}</td><td class="value">{{ shodan.ports|join(', ') }}</td></tr>{% endif %}
 </table>
 {% endif %}
 
 {% set breaches = results.get('breaches') %}
 {% if breaches and breaches.get('breaches') %}
-<h2>Email breaches ({{ breaches.breaches|length }})</h2>
-<table><tr><th>Source</th><th>Date</th></tr>
+<h2>{{ t('breaches.title', n=breaches.breaches|length) }}</h2>
+<table><tr><th>{{ t('breaches.source') }}</th><th>{{ t('breaches.date') }}</th></tr>
 {% for b in breaches.breaches %}<tr><td>{{ b.Name or b.name or b }}</td><td>{{ b.BreachDate or b.date or '' }}</td></tr>{% endfor %}
 </table>
 {% endif %}
 
 {% set phone = results.get('phone') %}
 {% if phone %}
-<h2>Phone</h2>
+<h2>{{ t('phone.title') }}</h2>
 <table>
-  <tr><td class="label">Valid</td><td class="value">{{ phone.valid }}</td></tr>
-  {% if phone.country_name %}<tr><td class="label">Country</td><td class="value">{{ phone.country_name }}</td></tr>{% endif %}
-  {% if phone.carrier %}<tr><td class="label">Carrier</td><td class="value">{{ phone.carrier }}</td></tr>{% endif %}
-  {% if phone.line_type %}<tr><td class="label">Line type</td><td class="value">{{ phone.line_type }}</td></tr>{% endif %}
-  {% if phone.region %}<tr><td class="label">Region</td><td class="value">{{ phone.region }}</td></tr>{% endif %}
+  <tr><td class="label">{{ t('phone.valid') }}</td><td class="value">{{ phone.valid }}</td></tr>
+  {% if phone.country_name %}<tr><td class="label">{{ t('phone.country') }}</td><td class="value">{{ phone.country_name }}</td></tr>{% endif %}
+  {% if phone.carrier %}<tr><td class="label">{{ t('phone.carrier') }}</td><td class="value">{{ phone.carrier }}</td></tr>{% endif %}
+  {% if phone.line_type %}<tr><td class="label">{{ t('phone.lineType') }}</td><td class="value">{{ phone.line_type }}</td></tr>{% endif %}
+  {% if phone.region %}<tr><td class="label">{{ t('phone.region') }}</td><td class="value">{{ phone.region }}</td></tr>{% endif %}
 </table>
 {% endif %}
 
 <div class="footer">
-  Generated by PRISM OSINT Toolkit · {{ generated_at }}
+  {{ t('report.footer') }} · {{ generated_at }}
 </div>
 </body>
 </html>
@@ -761,12 +766,8 @@ def generate_pdf_report(
     results: Dict[str, Any],
     opsec: Optional[Dict[str, Any]] = None,
     output_path: Optional[str] = None,
+    lang: str = "en",
 ) -> str:
-    """Generate a PDF version of the scan report using xhtml2pdf (pure Python).
-
-    Uses a dedicated PDF-friendly template (no JS, no flexbox, no web fonts)
-    so it works reliably on Windows/Linux/macOS without system libraries.
-    """
     try:
         from xhtml2pdf import pisa
     except ImportError as e:
@@ -787,6 +788,8 @@ def generate_pdf_report(
         "opsec_circle_color": _opsec_circle_color(opsec["score"]) if opsec else "#636e72",
         "cat_labels": CAT_LABELS,
         "bar_color": _bar_color,
+        "t": make_translator(lang),
+        "lang": lang,
     }
 
     html = template.render(**context)

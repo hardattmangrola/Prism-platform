@@ -80,7 +80,7 @@ def analyze_headers(raw_headers: str) -> Dict[str, Any]:
         auth_results = msg.get('Authentication-Results') or ''
         received_spf = msg.get('Received-SPF') or ''
 
-        spf_match = re.search(r'spf=(\w+)', auth_results, re.IGNORECASE) or \
+        spf_match = re.search(r'spf=(\w+)', auth_results, re.IGNORECASE) or\
                     re.search(r'^(pass|fail|softfail|neutral|none)', received_spf, re.IGNORECASE)
         if spf_match:
             result['spf'] = spf_match.group(1).lower()
