@@ -8,7 +8,7 @@
 [![CI](https://github.com/NovaCode37/Prism-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/NovaCode37/Prism-platform/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-2.3.0-7c5cfc?style=flat-square)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-102%20passing-3fb950?style=flat-square)](#running-tests)
+[![Tests](https://img.shields.io/badge/tests-123%20passing-3fb950?style=flat-square)](#running-tests)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776ab?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
@@ -52,7 +52,7 @@ PRISM aggregates data from **20+ external intelligence sources** to build a comp
 - **Frontend** — Next.js 14 (App Router), React, TypeScript, Tailwind CSS, Leaflet (maps)
 - **AI** — OpenRouter (Nvidia Nemotron) or Groq (Llama-3) for summary and chat
 - **Infrastructure** — Docker, docker-compose, GitHub Actions CI/CD
-- **Tests** — pytest, **102 test cases** with monkeypatching, network mocking, SSRF/auth coverage
+- **Tests** — pytest, **123 test cases** with monkeypatching, network mocking, SSRF/auth coverage
 
 <p align="center">
   <img src="docs/pics/main_showcase/main_showcase.png" alt="PRISM Dashboard" width="720" />
@@ -340,7 +340,7 @@ prism/
 │       ├── components/           # UI (Topbar, Sidebar, Map, Graph, ...)
 │       └── lib/                  # API client, i18n, types
 │
-└── tests/                        # 102 pytest tests
+└── tests/                        # 123 pytest tests
     ├── test_modules.py
     ├── test_modules_extended.py
     ├── test_v2_1_modules.py
