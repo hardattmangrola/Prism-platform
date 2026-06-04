@@ -389,14 +389,25 @@ GitHub Actions pipeline (`.github/workflows/ci.yml`):
 - [x] Authenticated HTML/PDF report download via blob fetch
 - [x] Test suite expanded to **102 cases**
 
-### v2.3 — planned
+### v2.3 — released
+- [x] Scan history panel + side-by-side scan comparison (diff view)
+- [x] CSV & Markdown report export (alongside HTML/PDF)
+- [x] French (FR) & Spanish (ES) locales — UI now ships EN / RU / DE / FR / ES
+- [x] Standalone CLI (`python cli.py scan <target> --json|--html|--pdf`)
+- [x] Slack / Discord webhook formatters (`WEBHOOK_FORMAT=slack|discord`)
+- [x] Rate-limit response headers, keyboard shortcuts, scan duration, copy-all-emails
+- [x] Graceful module degradation — `skipped` / `rate_limited` statuses instead of hard errors
+- [x] IP / Subnet calculator standalone tool
+- [x] One-command demo (`docker compose -f docker-compose.demo.yml up`) with seeded scans
+- [x] Reliable Leaflet map rendering + Unicode (Cyrillic) fonts in PDF export
+
+### v2.4 — planned
 - [ ] Scheduled scans + diff alerting via webhooks
-- [ ] Slack / Discord notification adapters
-- [ ] Scan history & comparison view
-- [ ] More languages (FR, ES, ZH)
 - [ ] Browser extension for one-click scans
-- [ ] Standalone CLI (`prism scan example.com --json`)
 - [ ] Per-API-key quotas and usage stats endpoint
+- [ ] GitHub user / organization recon module
+- [ ] Entity graph export to GEXF / GraphML (Gephi / Maltego)
+- [ ] Additional locales (ZH and community-contributed) + dark/light theme toggle
 
 > Want to contribute? Pick an open issue tagged `good first issue` or open a new one.
 
