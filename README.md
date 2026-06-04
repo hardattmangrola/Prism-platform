@@ -295,6 +295,31 @@ PRISM is configured via environment variables (`.env`). All API keys are optiona
 
 ---
 
+## API
+
+The backend exposes a REST + WebSocket API. All requests require an `X-API-Key` (or `Authorization: Bearer`) header unless `ALLOW_ANON_API=true`. Interactive docs are served at **`/docs`** (Swagger) and **`/redoc`** when running locally (unless `DISABLE_DOCS=true`).
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/scan` | Start a scan (`{ target, scan_type, modules }`) → returns `scan_id` |
+| `GET`  | `/api/scan/{id}` | Scan status and results |
+| `GET`  | `/api/scan/{id}/graph` | Entity relationship graph |
+| `GET`  | `/api/scan/{id}/map` | GeoIP map markers |
+| `GET`  | `/api/scan/{id}/report` | HTML report |
+| `GET`  | `/api/scan/{id}/report/pdf` | PDF report |
+| `GET`  | `/api/scans` | List past scans (per-principal) |
+| `WS`   | `/ws/{scan_id}` | Live scan progress stream |
+| `POST` | `/api/ai/summary`, `/api/ai/chat` | AI summary and Q&A |
+| `POST` | `/api/url-scan`, `/api/mac-lookup`, `/api/darkweb`, `/api/qr-decode`, `/api/email-headers`, `/api/metadata` | Standalone tools |
+
+```bash
+curl -X POST http://localhost:8080/api/scan \
+  -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
+  -d '{"target":"example.com","scan_type":"domain"}'
+```
+
+---
+
 ## Project Structure
 
 ```
