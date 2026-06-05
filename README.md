@@ -295,7 +295,7 @@ PRISM is configured via environment variables (`.env`). All API keys are optiona
 
 | Variable             | What it enables                                   | Required? | Where to Get               |
 | :--------------------| :------------------------------------------------ | :-------- | :------------------------- |
-| `API_KEY`            |  Secures your API endoints                        | Yes  | Generate your own secure string |
+| `API_KEY`            |  Secures your API endpoints                        | Yes  | Generate your own secure string |
 | `API_KEYS`           |  Allows passing multiple comma-separated API keys | No   | Generate your own secure strings|
 | `ALLOW_ANON_API`     | Allows unauthenticated API requests without a key | No   | Set to true                     |
 | `NUMVERIFY_API_KEY`  | Validates phone numbers                           | No   | Numverify dashboard             |
@@ -303,18 +303,20 @@ PRISM is configured via environment variables (`.env`). All API keys are optiona
 | `HIBP_API_KEY`       | Checks if Email/Passwords have been compromised   | No   | HIBP Developer Portal           |
 | `IPINFO_API_KEY`     | Fetches geolocation and ASN details for IP addresses| No | IPInfo.io Dashboard             |
 | `VIRUSTOTAL_API_KEY` | Scans file hashes and URLs for malware            | No   | VirusTotal API Dashboard        | 
-| `ABUSEIPDB_API_KEY` |Checks if an IP address has been reported for malicious activity | No | AbuseIPDB Dashboard  |
-| `SHODAN_API_KEY`    |Searches for internet-connected devices and open ports | No | Shodan Developer Dashboard     |
-| `TELEGRAM_BOT_TOKEN`| Sends automated scan alerts and reports directly to a Telegram channel | No | Telegram BotFather |
-| `CENSYS_API_ID`| Authenticates attack surface and internet-wide scanning queries | No | Censys Search Console |
-| `CENSYS_API_SECRET`| Paired with CENSYS_API_ID for Censys data access | No | Censys Search Console |
-| `ALLOWED_ORIGINS`| Configures CORS settings to restrict which frontend domains can talk to your backend | No | Set to a comma-separated list of domains |
-| `OPENROUTER_API_KEY`| Not currently implemented or used anywhere in the codebase | No | OpenRouter dashboard|
-| `GROQ_API_KEY`     |Not currently implemented or used anywhere in the codebase | No | Groq Console |
-| `MAX_STORED_SCANS`|Not currently implemented or used anywhere in the codebase | No | Set An Integer Value |
-| `DISABLE_DOCS`| Not currently implemented or used anywhere in the codebase | No | Set to True/False |
-| `WEBHOOK_SECRET`| Not currently implemented or used anywhere in the codebase | No | Generate a Placeholder string |
-| `MAX_UPLOAD_MB` |Sets the maximum file size limit for uploads, defaults to 20MB if missing.| No| Set an integer value |
+| `ABUSEIPDB_API_KEY`  |Checks if an IP address has been reported for malicious activity | No | AbuseIPDB Dashboard  |
+| `SHODAN_API_KEY`     |Searches for internet-connected devices and open ports | No | Shodan Developer Dashboard     |
+| `TELEGRAM_BOT_TOKEN` | Sends automated scan alerts and reports directly to a Telegram channel | No | Telegram BotFather |
+| `CENSYS_API_ID`      | Authenticates attack surface and internet-wide scanning queries | No | Censys Search Console |
+| `CENSYS_API_SECRET`  | Paired with CENSYS_API_ID for Censys data access | No | Censys Search Console |
+| `ALLOWED_ORIGINS`    | Configures CORS settings to restrict which frontend domains can talk to your backend | No | Set to a comma-separated list of domains |
+| `OPENROUTER_API_KEY` | AI summary & chat via OpenRouter (preffered LLM provider) | No | OpenRouter dashboard|
+| `GROQ_API_KEY`       | AI summary & chat via Groq (fallback LLM provider) | No | Groq Console |
+| `MAX_STORED_SCANS`   |max scans kept in memory before old ones are evicted (default 200) | No | Set An Integer Value |
+| `DISABLE_DOCS`       | disables the /docs and /redoc API documentation pages | No | Set to True/False |
+| `WEBHOOK_SECRET`     | adds an X-Prism-Secret header to webhook callbacks for verification | No | Generate a Placeholder string |
+| `MAX_UPLOAD_MB`      |Sets the maximum file size limit for uploads, defaults to 20MB if missing.| No| Set an integer value |
+| `WEBHOOK_FORMAT`     |Configures the format for webhook data payloads. | No | Set to raw, slack, or discord|
+| `CACHE_TTL_HOURS`    |Moudle cache TTL in hours | No | Set an integer value |
 
 ---
 
