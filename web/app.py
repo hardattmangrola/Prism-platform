@@ -160,6 +160,7 @@ class ScanRequest(BaseModel):
     target: str
     scan_type: str = "auto"
     modules: List[str] = []
+    force_refresh: bool = False
 
 def _detect_type(target: str) -> str:
     if "@" in target:
@@ -190,10 +191,10 @@ async def _push(scan_id: str, msg: Dict) -> None:
 
 _CACHED_MODULES = {"shodan", "hlr", "virustotal", "abuseipdb", "geoip"}
 
-async def _run_module(scan_id: str, name: str, coro_or_func, *args, **kwargs) -> Any:
+async def _run_module(scan_id: str, name: str, coro_or_func, *args, force_refresh: bool = False, **kwargs) -> Any:
     await _push(scan_id, {"type": "module_start", "module": name})
     cache_target = args[0] if args else None
-    if name in _CACHED_MODULES and cache_target:
+    if not force_refresh and name in _CACHED_MODULES and cache_target:
         cached = _get_cached(name, str(cache_target))
         if cached is not None:
             await _push(scan_id, {"type": "module_done", "module": name, "status": "ok", "cached": True})
@@ -212,7 +213,7 @@ async def _run_module(scan_id: str, name: str, coro_or_func, *args, **kwargs) ->
         await _push(scan_id, {"type": "module_done", "module": name, "status": "error", "error": str(exc)})
         return {"error": str(exc)}
 
-async def _execute_scan(scan_id: str, target: str, scan_type: str, modules: list) -> None:
+async def _execute_scan(scan_id: str, target: str, scan_type: str, modules: list, force_refresh: bool = False) -> None:
     results: Dict[str, Any] = {}
     all_modules = not modules
 
@@ -223,32 +224,32 @@ async def _execute_scan(scan_id: str, target: str, scan_type: str, modules: list
         if scan_type in ("domain", "ip"):
             if want("whois") and scan_type == "domain":
                 from modules.extra_tools import WhoisLookup
-                results["whois"] = await _run_module(scan_id, "whois", WhoisLookup().lookup, target)
+                results["whois"] = await _run_module(scan_id, "whois", WhoisLookup().lookup, target, force_refresh=force_refresh)
 
             if want("dns") and scan_type == "domain":
                 from modules.extra_tools import DNSLookup
-                results["dns"] = await _run_module(scan_id, "dns", DNSLookup().lookup, target)
+                results["dns"] = await _run_module(scan_id, "dns", DNSLookup().lookup, target, force_refresh=force_refresh)
 
             if want("geoip"):
                 from modules.extra_tools import GeoIPLookup
-                results["geoip"] = await _run_module(scan_id, "geoip", GeoIPLookup().lookup, target)
+                results["geoip"] = await _run_module(scan_id, "geoip", GeoIPLookup().lookup, target, force_refresh=force_refresh)
 
             if want("cert_transparency") and scan_type == "domain":
                 from modules.cert_transparency import CertTransparency
                 results["cert_transparency"] = await _run_module(
-                    scan_id, "cert_transparency", CertTransparency().search, target
+                    scan_id, "cert_transparency", CertTransparency().search, target, force_refresh=force_refresh
                 )
 
             if want("website") and scan_type == "domain":
                 from modules.extra_tools import WebsiteAnalyzer
                 results["website"] = await _run_module(
-                    scan_id, "website", WebsiteAnalyzer().analyze, target
+                    scan_id, "website", WebsiteAnalyzer().analyze, target, force_refresh=force_refresh
                 )
 
             if want("wayback") and scan_type == "domain":
                 from modules.wayback import WaybackMachine
                 results["wayback"] = await _run_module(
-                    scan_id, "wayback", WaybackMachine().get_snapshots, target, 15
+                    scan_id, "wayback", WaybackMachine().get_snapshots, target, 15, force_refresh=force_refresh
                 )
 
             if want("shodan"):
@@ -260,58 +261,59 @@ async def _execute_scan(scan_id: str, target: str, scan_type: str, modules: list
                         ip = socket.gethostbyname(target)
                     except Exception:
                         ip = target
-                results["shodan"] = await _run_module(scan_id, "shodan", ShodanLookup().host_info, ip)
+                results["shodan"] = await _run_module(scan_id, "shodan", ShodanLookup().host_info, ip, force_refresh=force_refresh)
 
             if want("virustotal"):
                 from modules.threat_intel import VirusTotal
                 vt = VirusTotal()
                 if scan_type == "ip":
-                    results["virustotal"] = await _run_module(scan_id, "virustotal", vt.check_ip, target)
+                    results["virustotal"] = await _run_module(scan_id, "virustotal", vt.check_ip, target, force_refresh=force_refresh)
                 else:
-                    results["virustotal"] = await _run_module(scan_id, "virustotal", vt.check_domain, target)
+                    results["virustotal"] = await _run_module(scan_id, "virustotal", vt.check_domain, target, force_refresh=force_refresh)
 
             if want("abuseipdb") and scan_type == "ip":
                 from modules.threat_intel import AbuseIPDB
-                results["abuseipdb"] = await _run_module(scan_id, "abuseipdb", AbuseIPDB().check_ip, target)
+                results["abuseipdb"] = await _run_module(scan_id, "abuseipdb", AbuseIPDB().check_ip, target, force_refresh=force_refresh)
 
             if want("onion") and scan_type == "domain":
                 from modules.onion_checker import OnionChecker
-                results["onion"] = await _run_module(scan_id, "onion", OnionChecker().check, target)
+                results["onion"] = await _run_module(scan_id, "onion", OnionChecker().check, target, force_refresh=force_refresh)
 
             if want("censys"):
                 from modules.censys_lookup import CensysLookup
                 cl = CensysLookup()
                 if scan_type == "domain":
-                    results["censys"] = await _run_module(scan_id, "censys", cl.search_domain, target)
+                    results["censys"] = await _run_module(scan_id, "censys", cl.search_domain, target, force_refresh=force_refresh)
                 else:
-                    results["censys"] = await _run_module(scan_id, "censys", cl.search_ip, target)
+                    results["censys"] = await _run_module(scan_id, "censys", cl.search_ip, target, force_refresh=force_refresh)
 
         elif scan_type == "email":
             if want("smtp"):
                 from modules.smtp_verify import SMTPVerifier
-                results["smtp"] = await _run_module(scan_id, "smtp", SMTPVerifier().verify_email, target)
+                results["smtp"] = await _run_module(scan_id, "smtp", SMTPVerifier().verify_email, target, force_refresh=force_refresh)
 
             if want("leaks"):
                 from modules.leak_lookup import LeakLookup
                 results["breaches"] = await _run_module(
-                    scan_id, "leaks", LeakLookup().check_email_full, target
+                    scan_id, "leaks", LeakLookup().check_email_full, target, force_refresh=force_refresh
                 )
 
             if want("emailrep"):
                 from modules.hunter import EmailRepLookup
                 results["emailrep"] = await _run_module(
-                    scan_id, "emailrep", EmailRepLookup().lookup, target
+                    scan_id, "emailrep", EmailRepLookup().lookup, target, force_refresh=force_refresh
                 )
 
         elif scan_type == "phone":
             if want("hlr"):
                 from modules.hlr_lookup import HLRLookup
                 hlr_obj = HLRLookup()
-                hlr = await _run_module(scan_id, "hlr", hlr_obj.validate_phone, target)
+                hlr = await _run_module(scan_id, "hlr", hlr_obj.validate_phone, target, force_refresh=force_refresh)
                 results["hlr"] = hlr
                 owner = await _run_module(
                     scan_id, "phone_owner", hlr_obj.reverse_lookup,
-                    hlr.get("formatted") or target
+                    hlr.get("formatted") or target,
+                    force_refresh=force_refresh
                 )
                 results["phone_owner"] = owner
                 results["phone"] = {
@@ -335,14 +337,14 @@ async def _execute_scan(scan_id: str, target: str, scan_type: str, modules: list
             tg = TelegramLookup()
             tg_target = target.lstrip("@").replace("t.me/", "").replace("telegram.me/", "").strip()
             results["telegram"] = await _run_module(
-                scan_id, "telegram", tg.run_lookup, tg_target, TELEGRAM_BOT_TOKEN or None
+                scan_id, "telegram", tg.run_lookup, tg_target, TELEGRAM_BOT_TOKEN or None, force_refresh=force_refresh
             )
 
         elif scan_type == "username":
             if want("blackbird"):
                 from modules.blackbird import Blackbird
                 bb = Blackbird(timeout=10, max_concurrent=25)
-                await _run_module(scan_id, "blackbird", bb.search, target)
+                await _run_module(scan_id, "blackbird", bb.search, target, force_refresh=force_refresh)
                 results["blackbird"] = [
                     {"site": r.site, "url": r.url, "status": r.status, "response_time": r.response_time}
                     for r in bb.results
@@ -351,7 +353,7 @@ async def _execute_scan(scan_id: str, target: str, scan_type: str, modules: list
             if want("maigret"):
                 from modules.maigret_wrapper import MaigretWrapper
                 results["maigret"] = await _run_module(
-                    scan_id, "maigret", MaigretWrapper().search, target
+                    scan_id, "maigret", MaigretWrapper().search, target, force_refresh=force_refresh
                 )
 
         await _push(scan_id, {"type": "module_start", "module": "opsec_score"})
@@ -414,7 +416,7 @@ async def start_scan(request: Request, req: ScanRequest):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            loop.run_until_complete(_execute_scan(scan_id, target, scan_type, req.modules))
+            loop.run_until_complete(_execute_scan(scan_id, target, scan_type, req.modules, req.force_refresh))
         finally:
             loop.close()
 
